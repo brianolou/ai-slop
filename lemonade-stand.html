@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lemonade Wars</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sun: #FFD93D;
+    --lemon: #F9F871;
+    --sky: #87CEEB;
+    --grass: #6BCB77;
+    --stand: #FF6B6B;
+    --rival: #4D96FF;
+    --road: #B8B8B8;
+    --white: #FFFEF0;
+    --dark: #2D2D2D;
+    --money: #4CAF50;
+    --broke: #e74c3c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--sky);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.8rem;
+    color: var(--dark);
+    text-shadow: 3px 3px 0 var(--sun);
+    margin: 16px 0 4px;
+    letter-spacing: 1px;
+  }
+
+  .subtitle { color: #555; font-size: 0.95rem; margin-bottom: 10px; font-weight: 600; }
+
+  /* SCENE */
+  .scene {
+    width: 100%;
+    max-width: 900px;
+    height: 200px;
+    position: relative;
+    margin-bottom: 6px;
+  }
+
+  .sky-bg {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, #87CEEB 60%, #b8f0a0 60%);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .road {
+    position: absolute;
+    bottom: 38px; left: 0; right: 0;
+    height: 28px;
+    background: #999;
+    border-top: 3px dashed #fff;
+  }
+
+  .sun {
+    position: absolute;
+    top: 14px; right: 60px;
+    width: 52px; height: 52px;
+    background: var(--sun);
+    border-radius: 50%;
+    box-shadow: 0 0 20px 8px rgba(255,217,61,0.4);
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+
+  .cloud {
+    position: absolute;
+    background: white;
+    border-radius: 40px;
+    opacity: 0.85;
+  }
+
+  .stand-wrap {
+    position: absolute;
+    bottom: 62px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform 0.2s;
+  }
+
+  .stand-wrap.player { left: 60px; }
+  .stand-wrap.rival { right: 60px; }
+
+  .stand-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.75rem;
+    border-radius: 6px;
+    padding: 2px 8px;
+    margin-bottom: 4px;
+    color: white;
+  }
+
+  .player .stand-label { background: var(--stand); }
+  .rival .stand-label { background: var(--rival); }
+
+  .stand-icon {
+    font-size: 3.2rem;
+    line-height: 1;
+  }
+
+  /* Customers walking */
+  .customer {
+    position: absolute;
+    bottom: 64px;
+    font-size: 1.4rem;
+    transition: left 1.2s ease-in-out;
+    animation: walk 0.4s steps(2) infinite;
+    z-index: 10;
+  }
+
+  @keyframes walk {
+    0% { transform: scaleX(1) translateY(0); }
+    50% { transform: scaleX(1) translateY(-3px); }
+    100% { transform: scaleX(1) translateY(0); }
+  }
+
+  /* GAME PANELS */
+  .game-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    max-width: 900px;
+    width: 100%;
+    padding: 0 12px 16px;
+  }
+
+  .panel {
+    background: var(--white);
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.12);
+    border: 2.5px solid rgba(0,0,0,0.1);
+  }
+
+  .panel-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .player-panel .panel-title { color: var(--stand); }
+  .rival-panel .panel-title { color: var(--rival); }
+  .log-panel { grid-column: 1 / -1; }
+  .log-panel .panel-title { color: #666; }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 6px 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .money-val {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    color: var(--money);
+  }
+
+  .price-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .price-btn {
+    width: 32px; height: 32px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.1s;
+    color: white;
+  }
+
+  .price-btn.minus { background: #e74c3c; }
+  .price-btn.plus { background: #2ecc71; }
+  .price-btn:hover { transform: scale(1.1); }
+  .price-btn:active { transform: scale(0.95); }
+
+  .price-display {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.6rem;
+    color: var(--dark);
+    min-width: 60px;
+    text-align: center;
+  }
+
+  .next-day-btn {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    background: var(--sun);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    color: var(--dark);
+    box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+    transition: transform 0.1s;
+    letter-spacing: 0.5px;
+  }
+
+  .next-day-btn:hover { transform: translateY(-2px); }
+  .next-day-btn:active { transform: translateY(2px); box-shadow: none; }
+
+  /* Log */
+  .log-entries {
+    max-height: 90px;
+    overflow-y: auto;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #444;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 2px;
+  }
+
+  .log-entry { padding: 3px 6px; border-radius: 6px; background: #f5f5e8; }
+  .log-entry.good { background: #d4f5d4; color: #1a6b1a; }
+  .log-entry.bad { background: #fde8e8; color: #a01a1a; }
+  .log-entry.info { background: #e8f0ff; color: #1a3a8a; }
+
+  /* Progress bar */
+  .bar-wrap { background: #eee; border-radius: 6px; height: 10px; overflow: hidden; margin-top: 4px; }
+  .bar { height: 100%; border-radius: 6px; transition: width 0.5s ease; }
+  .player-bar { background: var(--stand); }
+  .rival-bar { background: var(--rival); }
+
+  /* Game over */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .overlay.show { display: flex; }
+
+  .modal {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 32px 40px;
+    text-align: center;
+    max-width: 360px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+  }
+
+  .modal h2 { font-family: 'Fredoka One', cursive; font-size: 2rem; margin-bottom: 12px; }
+  .modal p { font-size: 1rem; color: #555; margin-bottom: 20px; font-weight: 600; }
+  .modal button {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    padding: 10px 28px;
+    background: var(--sun);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+  }
+
+  .day-counter {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    color: #777;
+    margin-bottom: 2px;
+  }
+</style>
+</head>
+<body>
+
+<h1>🍋 Lemonade Wars</h1>
+<p class="subtitle">Beat your rival before you go broke!</p>
+<p class="day-counter" id="dayCounter">Day 1</p>
+
+<div class="scene">
+  <div class="sky-bg">
+    <div class="sun"></div>
+    <div class="cloud" style="width:80px;height:28px;top:20px;left:80px"></div>
+    <div class="cloud" style="width:50px;height:20px;top:28px;left:140px"></div>
+    <div class="cloud" style="width:90px;height:30px;top:12px;left:360px"></div>
+    <div class="road"></div>
+    <div class="stand-wrap player">
+      <div class="stand-label">YOUR STAND</div>
+      <div class="stand-icon">🍋</div>
+    </div>
+    <div class="stand-wrap rival">
+      <div class="stand-label">RIVAL</div>
+      <div class="stand-icon">🥤</div>
+    </div>
+    <div id="customerContainer"></div>
+  </div>
+</div>
+
+<div class="game-area">
+  <!-- Player Panel -->
+  <div class="panel player-panel">
+    <div class="panel-title">🍋 Your Stand</div>
+    <div class="stat-row">
+      <span>💰 Funds</span>
+      <span class="money-val" id="playerMoney">$50.00</span>
+    </div>
+    <div class="bar-wrap"><div class="bar player-bar" id="playerBar" style="width:50%"></div></div>
+    <div class="stat-row" style="margin-top:8px">
+      <span>📦 Cost/cup</span>
+      <span>$0.30</span>
+    </div>
+    <div class="stat-row">
+      <span>🥤 Cups sold</span>
+      <span id="playerSold">0</span>
+    </div>
+    <div style="margin-top:10px; font-weight:700; font-size:0.85rem; color:#888">Your Price:</div>
+    <div class="price-control">
+      <button class="price-btn minus" onclick="changePrice(-0.10)">−</button>
+      <div class="price-display" id="playerPrice">$0.75</div>
+      <button class="price-btn plus" onclick="changePrice(0.10)">+</button>
+    </div>
+    <button class="next-day-btn" onclick="nextDay()">☀️ Next Day</button>
+  </div>
+
+  <!-- Rival Panel -->
+  <div class="panel rival-panel">
+    <div class="panel-title">🥤 Rival Stand</div>
+    <div class="stat-row">
+      <span>💰 Funds</span>
+      <span class="money-val" id="rivalMoney">$50.00</span>
+    </div>
+    <div class="bar-wrap"><div class="bar rival-bar" id="rivalBar" style="width:50%"></div></div>
+    <div class="stat-row" style="margin-top:8px">
+      <span>📦 Cost/cup</span>
+      <span>$0.35</span>
+    </div>
+    <div class="stat-row">
+      <span>🥤 Cups sold</span>
+      <span id="rivalSold">0</span>
+    </div>
+    <div style="margin-top:10px; font-weight:700; font-size:0.85rem; color:#888">Rival Price:</div>
+    <div class="price-display" id="rivalPrice" style="text-align:left;margin-top:6px">$0.80</div>
+    <div style="font-size:0.75rem;color:#aaa;margin-top:4px">Rival adjusts automatically</div>
+  </div>
+
+  <!-- Stats Panel -->
+  <div class="panel">
+    <div class="panel-title" style="color:#888">📊 Today's Weather</div>
+    <div id="weatherDisplay" style="font-size:2rem;text-align:center;margin:8px 0">☀️</div>
+    <div id="weatherDesc" style="font-size:0.82rem;color:#666;text-align:center;font-weight:600;margin-bottom:10px">Hot & sunny — great day!</div>
+    <div class="stat-row"><span>Customers today:</span><span id="customersToday">—</span></div>
+    <div class="stat-row"><span>Your share:</span><span id="playerShare">—</span></div>
+    <div class="stat-row"><span>Your profit:</span><span id="todayProfit" style="color:var(--money)">—</span></div>
+    <div class="stat-row"><span>Days survived:</span><span id="daysSurvived">0</span></div>
+  </div>
+
+  <!-- Log Panel -->
+  <div class="panel log-panel">
+    <div class="panel-title">📜 Daily Journal</div>
+    <div class="log-entries" id="logEntries">
+      <div class="log-entry info">🎉 Welcome to Lemonade Wars! Set your price and press Next Day to start!</div>
+    </div>
+  </div>
+</div>
+
+<!-- Game Over Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">Game Over!</h2>
+    <p id="modalMsg">You ran out of money...</p>
+    <button onclick="restartGame()">Play Again 🍋</button>
+  </div>
+</div>
+
+<script>
+const COST_PLAYER = 0.30;
+const COST_RIVAL = 0.35;
+const DAILY_OVERHEAD = 2.00;
+const MIN_PRICE = 0.30;
+const MAX_PRICE = 3.00;
+const MAX_MONEY = 100;
+
+let state = {
+  day: 1,
+  playerMoney: 50,
+  rivalMoney: 50,
+  playerPrice: 0.75,
+  rivalPrice: 0.80,
+  playerSold: 0,
+  rivalSold: 0,
+  daysSurvived: 0,
+  gameOver: false
+};
+
+const weathers = [
+  { icon: '☀️', desc: 'Hot & sunny — great day!', customers: [12, 20] },
+  { icon: '⛅', desc: 'Partly cloudy — decent crowd', customers: [8, 14] },
+  { icon: '🌥️', desc: 'Overcast — slow day', customers: [5, 10] },
+  { icon: '🌤️', desc: 'Nice breeze — solid traffic', customers: [10, 17] },
+  { icon: '🌈', desc: 'After rain — curious crowd!', customers: [14, 22] },
+];
+
+let currentWeather = weathers[0];
+let animating = false;
+
+function fmt(n) { return '$' + n.toFixed(2); }
+
+function changePrice(delta) {
+  if (state.gameOver) return;
+  state.playerPrice = Math.max(MIN_PRICE, Math.min(MAX_PRICE, +(state.playerPrice + delta).toFixed(2)));
+  document.getElementById('playerPrice').textContent = fmt(state.playerPrice);
+}
+
+function rivalAI() {
+  // Rival tries to be competitive but has limited intelligence
+  const roll = Math.random();
+  if (roll < 0.2) {
+    // Random change
+    const delta = (Math.random() > 0.5 ? 0.10 : -0.10);
+    state.rivalPrice = Math.max(MIN_PRICE, Math.min(MAX_PRICE, +(state.rivalPrice + delta).toFixed(2)));
+    return `Rival randomly changed price to ${fmt(state.rivalPrice)}!`;
+  } else if (roll < 0.55) {
+    // Undercut player
+    const target = +(state.playerPrice - 0.10).toFixed(2);
+    if (target >= MIN_PRICE && Math.abs(target - state.rivalPrice) > 0.01) {
+      state.rivalPrice = Math.max(MIN_PRICE, target);
+      return `Rival undercut you! Their price is now ${fmt(state.rivalPrice)}!`;
+    }
+  } else if (roll < 0.7 && state.rivalMoney > 20) {
+    // Raise price if doing well
+    state.rivalPrice = Math.min(MAX_PRICE, +(state.rivalPrice + 0.10).toFixed(2));
+    return `Rival raised their price to ${fmt(state.rivalPrice)}.`;
+  }
+  return null;
+}
+
+function customerSplit(totalCustomers, pPlayer, pRival) {
+  // Customers choose based on price + some randomness
+  let playerCups = 0, rivalCups = 0;
+  for (let i = 0; i < totalCustomers; i++) {
+    const preference = (Math.random() - 0.5) * 0.30; // random taste
+    const playerScore = -pPlayer + preference;
+    const rivalScore = -pRival - preference;
+    if (playerScore >= rivalScore) playerCups++;
+    else rivalCups++;
+  }
+  return { playerCups, rivalCups };
+}
+
+function addLog(msg, type = '') {
+  const el = document.getElementById('logEntries');
+  const div = document.createElement('div');
+  div.className = 'log-entry ' + type;
+  div.textContent = msg;
+  el.prepend(div);
+  while (el.children.length > 20) el.removeChild(el.lastChild);
+}
+
+function spawnCustomers(playerCups, rivalCups, total) {
+  const container = document.getElementById('customerContainer');
+  container.innerHTML = '';
+  const emojis = ['🧒','👦','👧','👨','👩','🧑','👴','👵'];
+  // Customers walk to player or rival
+  for (let i = 0; i < Math.min(total, 8); i++) {
+    const goPlayer = i < Math.round(playerCups / total * Math.min(total,8));
+    const span = document.createElement('div');
+    span.className = 'customer';
+    span.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    span.style.left = '45%';
+    span.style.bottom = (64 + Math.floor(Math.random()*10)) + 'px';
+    container.appendChild(span);
+    const targetLeft = goPlayer ? (6 + Math.random()*10) + '%' : (82 + Math.random()*8) + '%';
+    setTimeout(() => { span.style.left = targetLeft; }, 100 + i * 120);
+    setTimeout(() => { span.remove(); }, 1500 + i * 120);
+  }
+}
+
+function nextDay() {
+  if (state.gameOver || animating) return;
+  animating = true;
+
+  // Pick weather
+  currentWeather = weathers[Math.floor(Math.random() * weathers.length)];
+  const totalCustomers = Math.floor(Math.random() * (currentWeather.customers[1] - currentWeather.customers[0]) + currentWeather.customers[0]);
+
+  // Rival AI moves
+  const rivalMsg = rivalAI();
+  if (rivalMsg) addLog('🥤 ' + rivalMsg, 'info');
+
+  // Customer split
+  const { playerCups, rivalCups } = customerSplit(totalCustomers, state.playerPrice, state.rivalPrice);
+
+  // Profits
+  const playerRevenue = playerCups * state.playerPrice;
+  const playerCost = playerCups * COST_PLAYER + DAILY_OVERHEAD;
+  const playerProfit = playerRevenue - playerCost;
+
+  const rivalRevenue = rivalCups * state.rivalPrice;
+  const rivalCost = rivalCups * COST_RIVAL + DAILY_OVERHEAD;
+  const rivalProfit = rivalRevenue - rivalCost;
+
+  state.playerMoney += playerProfit;
+  state.rivalMoney += rivalProfit;
+  state.playerSold += playerCups;
+  state.rivalSold += rivalCups;
+  state.daysSurvived++;
+  state.day++;
+
+  // Animate customers
+  spawnCustomers(playerCups, rivalCups, totalCustomers);
+
+  // Update UI
+  setTimeout(() => {
+    updateUI(playerCups, rivalCups, totalCustomers, playerProfit);
+    checkGameOver();
+    animating = false;
+  }, 1600);
+
+  // Logs
+  addLog(`Day ${state.day - 1}: ☀️ ${currentWeather.icon} ${totalCustomers} customers — You sold ${playerCups}, Rival sold ${rivalCups}.`,
+    playerProfit >= 0 ? 'good' : 'bad');
+  if (playerProfit < 0) addLog(`📉 You lost ${fmt(Math.abs(playerProfit))} today!`, 'bad');
+  if (rivalProfit < 0) addLog(`💸 Rival lost ${fmt(Math.abs(rivalProfit))} today!`, 'good');
+}
+
+function updateUI(playerCups, rivalCups, total, playerProfit) {
+  document.getElementById('dayCounter').textContent = 'Day ' + state.day;
+  document.getElementById('playerMoney').textContent = fmt(Math.max(0, state.playerMoney));
+  document.getElementById('rivalMoney').textContent = fmt(Math.max(0, state.rivalMoney));
+  document.getElementById('playerSold').textContent = state.playerSold;
+  document.getElementById('rivalSold').textContent = state.rivalSold;
+  document.getElementById('playerPrice').textContent = fmt(state.playerPrice);
+  document.getElementById('rivalPrice').textContent = fmt(state.rivalPrice);
+  document.getElementById('weatherDisplay').textContent = currentWeather.icon;
+  document.getElementById('weatherDesc').textContent = currentWeather.desc;
+  document.getElementById('customersToday').textContent = total;
+  document.getElementById('playerShare').textContent = total > 0 ? Math.round(playerCups/total*100) + '%' : '—';
+  document.getElementById('todayProfit').textContent = (playerProfit >= 0 ? '+' : '') + fmt(playerProfit);
+  document.getElementById('todayProfit').style.color = playerProfit >= 0 ? 'var(--money)' : 'var(--broke)';
+  document.getElementById('daysSurvived').textContent = state.daysSurvived;
+
+  const pPct = Math.max(0, Math.min(100, state.playerMoney / MAX_MONEY * 100));
+  const rPct = Math.max(0, Math.min(100, state.rivalMoney / MAX_MONEY * 100));
+  document.getElementById('playerBar').style.width = pPct + '%';
+  document.getElementById('rivalBar').style.width = rPct + '%';
+}
+
+function checkGameOver() {
+  if (state.rivalMoney <= 0 && state.playerMoney <= 0) {
+    endGame('🤝 Draw!', 'Both stands went broke on the same day. A bittersweet tie!');
+  } else if (state.rivalMoney <= 0) {
+    endGame('🏆 You Won!', `You outlasted the rival! Survived ${state.daysSurvived} days with $${state.playerMoney.toFixed(2)} left.`);
+  } else if (state.playerMoney <= 0) {
+    endGame('💸 You Lost!', `Your stand went broke after ${state.daysSurvived} days. The rival lives on!`);
+  }
+}
+
+function endGame(title, msg) {
+  state.gameOver = true;
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalMsg').textContent = msg;
+  document.getElementById('overlay').classList.add('show');
+}
+
+function restartGame() {
+  state = { day: 1, playerMoney: 50, rivalMoney: 50, playerPrice: 0.75, rivalPrice: 0.80,
+    playerSold: 0, rivalSold: 0, daysSurvived: 0, gameOver: false };
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('logEntries').innerHTML = '<div class="log-entry info">🎉 New game started! Good luck!</div>';
+  document.getElementById('customerContainer').innerHTML = '';
+  updateUI(0, 0, 0, 0);
+  document.getElementById('dayCounter').textContent = 'Day 1';
+  document.getElementById('customersToday').textContent = '—';
+  document.getElementById('playerShare').textContent = '—';
+  document.getElementById('todayProfit').textContent = '—';
+  document.getElementById('daysSurvived').textContent = '0';
+}
+</script>
+</body>
+</html>
